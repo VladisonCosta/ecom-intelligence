@@ -49,11 +49,7 @@ CREATE TABLE IF NOT EXISTS products (
     product_length_cm INTEGER,
     product_height_cm INTEGER,
     product_width_cm INTEGER,
-    product_photos_qty INTEGER,
-
-    CONSTRAINT fk_products_category
-        FOREIGN KEY (product_category_name)
-        REFERENCES product_category_translation(product_category_name)
+    product_photos_qty INTEGER
 );
 
 -- ---------------------------------------------------------
