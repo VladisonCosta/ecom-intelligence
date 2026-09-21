@@ -38,11 +38,15 @@ def load_engine():
 
 
 @st.cache_data(ttl=300)
-def load_dataframe(query):
+def load_dataframe(query, params=None):
     engine = load_engine()
 
     with engine.connect() as connection:
-        return pd.read_sql(text(query), connection)
+        return pd.read_sql(
+            text(query),
+            connection,
+            params=params or {},
+        )
 
 
 def format_brl(value):
@@ -65,20 +69,6 @@ def format_integer(value):
 # ============================================================
 # DATA
 # ============================================================
-
-kpis = load_dataframe(
-    """
-    SELECT
-        COUNT(*) AS total_orders,
-        COUNT(DISTINCT customer_unique_id) AS unique_customers,
-        SUM(product_value) AS gmv,
-        AVG(product_value) AS average_order_value,
-        AVG(review_score) AS average_review_score
-    FROM vw_order_metrics
-    WHERE order_status NOT IN ('canceled', 'unavailable');
-    """
-).iloc[0]
-
 
 monthly_sales = load_dataframe(
     """
@@ -196,6 +186,79 @@ date_range = st.sidebar.date_input(
     min_value=min_date,
     max_value=max_date,
 )
+if isinstance(date_range, (tuple, list)) and len(date_range) == 2:
+    start_date, end_date = date_range
+else:
+    start_date = min_date
+    end_date = max_date
+
+state_options = load_dataframe(
+    """
+    SELECT DISTINCT customer_state
+    FROM vw_order_metrics
+    WHERE customer_state IS NOT NULL
+    ORDER BY customer_state;
+    """
+)["customer_state"].tolist()
+
+selected_state = st.sidebar.selectbox(
+    "Customer state",
+    options=["All states"] + state_options,
+)
+
+kpis = load_dataframe(
+    """
+    SELECT
+        COUNT(*) AS total_orders,
+        COUNT(DISTINCT customer_unique_id) AS unique_customers,
+        COALESCE(SUM(product_value), 0) AS gmv,
+        COALESCE(AVG(product_value), 0) AS average_order_value,
+        COALESCE(AVG(review_score), 0) AS average_review_score
+    FROM vw_order_metrics
+    WHERE order_status NOT IN ('canceled', 'unavailable')
+      AND order_purchase_timestamp >= :start_date
+      AND order_purchase_timestamp < CAST(:end_date AS DATE) + INTERVAL '1 day'
+      AND (
+          :selected_state = 'All states'
+          OR customer_state = :selected_state
+      );
+    """,
+    {
+        "start_date": start_date,
+        "end_date": end_date,
+        "selected_state": selected_state,
+    },
+).iloc[0]
+filtered_monthly_sales = load_dataframe(
+    """
+    SELECT
+        DATE_TRUNC('month', order_purchase_timestamp) AS month,
+        COUNT(*) AS orders,
+        COUNT(DISTINCT customer_unique_id) AS customers,
+        COALESCE(SUM(product_value), 0) AS gmv,
+        COALESCE(AVG(product_value), 0) AS average_order_value,
+        COALESCE(SUM(freight_value), 0) AS freight_value
+    FROM vw_order_metrics
+    WHERE order_status NOT IN ('canceled', 'unavailable')
+      AND order_purchase_timestamp >= :start_date
+      AND order_purchase_timestamp < CAST(:end_date AS DATE) + INTERVAL '1 day'
+      AND (
+          :selected_state = 'All states'
+          OR customer_state = :selected_state
+      )
+    GROUP BY DATE_TRUNC('month', order_purchase_timestamp)
+    ORDER BY month;
+    """,
+    {
+        "start_date": start_date,
+        "end_date": end_date,
+        "selected_state": selected_state,
+    },
+)
+
+filtered_monthly_sales["month"] = pd.to_datetime(
+    filtered_monthly_sales["month"]
+)
 
 top_n = st.sidebar.slider(
     "Categories displayed",
@@ -231,7 +294,7 @@ st.sidebar.caption(
 # FILTERS
 # ============================================================
 
-filtered_monthly = monthly_sales.copy()
+filtered_monthly = filtered_monthly_sales.copy()
 
 if isinstance(date_range, (tuple, list)) and len(date_range) == 2:
     start_date, end_date = date_range
