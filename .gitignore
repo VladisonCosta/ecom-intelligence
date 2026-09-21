@@ -1,0 +1,21 @@
+# Python virtual environment
+.venv/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Environment variables / secrets
+.env
+
+# Raw datasets
+data/raw/*.csv
+
+# Processed datasets
+data/processed/
+
+# VS Code
+.vscode/
+
+# Windows
+Thumbs.db
