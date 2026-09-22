@@ -10,18 +10,21 @@ load_dotenv()
 def get_engine():
     """Create and return the PostgreSQL SQLAlchemy engine."""
 
-    host = os.getenv("DB_HOST")
-    port = os.getenv("DB_PORT")
-    database = os.getenv("DB_NAME")
-    user = os.getenv("DB_USER")
-    password = os.getenv("DB_PASSWORD")
+    database_url = os.getenv("DATABASE_URL")
 
-    database_url = (
-        f"postgresql+psycopg2://{user}:{password}"
-        f"@{host}:{port}/{database}"
-    )
+    if not database_url:
+        host = os.getenv("DB_HOST")
+        port = os.getenv("DB_PORT")
+        database = os.getenv("DB_NAME")
+        user = os.getenv("DB_USER")
+        password = os.getenv("DB_PASSWORD")
 
-    return create_engine(database_url)
+        database_url = (
+            f"postgresql+psycopg2://{user}:{password}"
+            f"@{host}:{port}/{database}"
+        )
+
+    return create_engine(database_url, pool_pre_ping=True)
 
 
 def test_connection():
