@@ -4,6 +4,14 @@ End-to-end data engineering and analytics project built with Python, PostgreSQL,
 
 The project transforms raw e-commerce data into a relational PostgreSQL database, performs data quality validation, creates analytical SQL views and exposes business metrics through an interactive dashboard.
 
+## Live Demo
+
+The interactive dashboard is publicly available on Streamlit Community Cloud:
+
+**[Open the E-commerce Intelligence Dashboard](https://ecom-intelligence-vladison.streamlit.app)**
+
+> The application uses a cloud-hosted PostgreSQL database and may take a few seconds to wake up after a period of inactivity.
+
 ## Dashboard
 
 ### Executive Overview
