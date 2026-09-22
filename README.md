@@ -1,5 +1,7 @@
 # E-commerce Intelligence
 
+[![Tests](https://github.com/VladisonCosta/ecom-intelligence/actions/workflows/tests.yml/badge.svg)](https://github.com/VladisonCosta/ecom-intelligence/actions/workflows/tests.yml)
+
 End-to-end data engineering and analytics project built with Python, PostgreSQL, SQL, Pandas, Plotly and Streamlit using the Brazilian E-Commerce Public Dataset by Olist.
 
 The project transforms raw e-commerce data into a relational PostgreSQL database, performs data quality validation, creates analytical SQL views and exposes business metrics through an interactive dashboard.
